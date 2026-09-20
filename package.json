@@ -1,0 +1,84 @@
+{
+  "name": "prateek-ai-copilot",
+  "version": "1.0.0",
+  "description": "Undetectable Real-Time AI Interview Copilot HUD with Dual-Channel Audio Transcription",
+  "main": "dist-electron/main.js",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "tsc && vite build && tsc -p tsconfig.electron.json",
+    "preview": "vite preview",
+    "electron:start": "electron dist-electron/main.js",
+    "build:exe": "npm run build && electron-builder --win && powershell -Command \"Copy-Item 'C:/Users/Sumit Singh/prateek-release/*.exe' -Destination 'release' -Force\"",
+    "build:portable": "npm run build && electron-builder --win portable && powershell -Command \"Copy-Item 'C:/Users/Sumit Singh/prateek-release/*.exe' -Destination 'release' -Force\""
+  },
+  "build": {
+    "appId": "com.prateek.aicopilot",
+    "productName": "Prateek AI Copilot",
+    "directories": {
+      "output": "C:/Users/Sumit Singh/prateek-release"
+    },
+    "files": [
+      "dist/**/*",
+      "dist-electron/**/*",
+      "package.json"
+    ],
+    "win": {
+      "target": [
+        {
+          "target": "nsis",
+          "arch": [
+            "x64"
+          ]
+        },
+        {
+          "target": "portable",
+          "arch": [
+            "x64"
+          ]
+        }
+      ]
+    },
+    "nsis": {
+      "oneClick": false,
+      "perMachine": false,
+      "allowToChangeInstallationDirectory": true,
+      "createDesktopShortcut": true,
+      "createStartMenuShortcut": true,
+      "shortcutName": "Prateek AI Copilot"
+    }
+  },
+  "keywords": [
+    "electron",
+    "ai",
+    "copilot",
+    "interview-assistant",
+    "stealth-hud",
+    "deepgram",
+    "gemini"
+  ],
+  "author": "Engineering Team",
+  "license": "MIT",
+  "dependencies": {
+    "clsx": "^2.1.1",
+    "lucide-react": "^0.468.0",
+    "react": "^18.3.1",
+    "react-dom": "^18.3.1",
+    "tailwind-merge": "^2.5.5"
+  },
+  "devDependencies": {
+    "@types/node": "^22.10.1",
+    "@types/react": "^18.3.12",
+    "@types/react-dom": "^18.3.1",
+    "@vitejs/plugin-react": "^4.3.4",
+    "autoprefixer": "^10.4.20",
+    "electron": "^33.2.1",
+    "electron-builder": "^26.15.3",
+    "postcss": "^8.4.49",
+    "tailwindcss": "^3.4.16",
+    "typescript": "^5.7.2",
+    "vite": "^6.0.1",
+    "vite-plugin-electron": "^0.29.0",
+    "vite-plugin-electron-renderer": "^0.14.6"
+  }
+}
