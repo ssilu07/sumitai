@@ -12,6 +12,8 @@ import {
   RotateCcw,
   Briefcase,
   Radio,
+  Languages,
+  Zap,
 } from 'lucide-react';
 import { AppSettings, AudioDevice } from '../types';
 import { getAvailableAudioDevices } from '../services/audioCapture';
@@ -271,24 +273,87 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
             </div>
           )}
 
-          {/* Tab 1: API Keys */}
+          {/* Tab 1: API Keys & STT Engine */}
           {activeTab === 'keys' && (
             <div className="space-y-3.5">
-              <div>
-                <label className="block text-slate-300 font-medium mb-1">
-                  Deepgram API Key <span className="text-rose-400">*</span>
+              {/* STT Engine Provider Selection */}
+              <div className="p-3 rounded-lg bg-black/40 border border-white/10 space-y-2">
+                <label className="block text-slate-200 font-semibold text-xs">
+                  Speech-to-Text (STT) Engine
                 </label>
-                <input
-                  type="password"
-                  value={formData.deepgramApiKey}
-                  onChange={(e) => setFormData({ ...formData, deepgramApiKey: e.target.value })}
-                  placeholder="Enter your Deepgram API Key (nova-2 streaming)"
-                  className="w-full bg-slate-950 border border-white/10 rounded px-3 py-2 text-slate-100 placeholder-slate-600 focus:outline-none focus:border-blue-500 font-mono text-xs"
-                />
-                <p className="text-[10px] text-slate-500 mt-1">
-                  Required for real-time speech-to-text. Free signup at deepgram.com
-                </p>
+                <div className="grid grid-cols-2 gap-2">
+                  <button
+                    type="button"
+                    onClick={() => setFormData({ ...formData, sttProvider: 'assemblyai' })}
+                    className={`p-2.5 rounded-lg border text-left transition-all ${
+                      (formData.sttProvider || 'assemblyai') === 'assemblyai'
+                        ? 'bg-purple-950/70 border-purple-500 text-purple-100 ring-1 ring-purple-500'
+                        : 'bg-black/30 border-white/10 text-slate-400 hover:bg-white/5'
+                    }`}
+                  >
+                    <div className="text-xs font-semibold text-white flex items-center justify-between">
+                      <span>AssemblyAI v3</span>
+                      <span className="text-[9px] px-1.5 py-0.5 rounded bg-purple-500/20 text-purple-300 font-mono">Recommended</span>
+                    </div>
+                    <div className="text-[10px] text-purple-200/90 mt-1 leading-tight">
+                      ⚡ Universal-3.5 Pro Live WebSocket (Zero Hallucination)
+                    </div>
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => setFormData({ ...formData, sttProvider: 'deepgram' })}
+                    className={`p-2.5 rounded-lg border text-left transition-all ${
+                      formData.sttProvider === 'deepgram'
+                        ? 'bg-blue-950/70 border-blue-500 text-blue-100 ring-1 ring-blue-500'
+                        : 'bg-black/30 border-white/10 text-slate-400 hover:bg-white/5'
+                    }`}
+                  >
+                    <div className="text-xs font-semibold text-white flex items-center justify-between">
+                      <span>Deepgram Nova-2</span>
+                      <span className="text-[9px] px-1.5 py-0.5 rounded bg-blue-500/20 text-blue-300 font-mono">Alternative</span>
+                    </div>
+                    <div className="text-[10px] text-slate-400 mt-1 leading-tight">
+                      Fast Real-time streaming WebSocket
+                    </div>
+                  </button>
+                </div>
               </div>
+
+              {/* STT API Key Field */}
+              {(formData.sttProvider || 'assemblyai') === 'assemblyai' ? (
+                <div>
+                  <label className="block text-slate-300 font-medium mb-1">
+                    AssemblyAI API Key <span className="text-purple-400">*</span>
+                  </label>
+                  <input
+                    type="password"
+                    value={formData.assemblyaiApiKey || ''}
+                    onChange={(e) => setFormData({ ...formData, assemblyaiApiKey: e.target.value })}
+                    placeholder="Enter your AssemblyAI API Key"
+                    className="w-full bg-slate-950 border border-white/10 rounded px-3 py-2 text-slate-100 placeholder-slate-600 focus:outline-none focus:border-purple-500 font-mono text-xs"
+                  />
+                  <p className="text-[10px] text-slate-500 mt-1">
+                    Free signup with $50 credits at assemblyai.com (Universal-3.5 Pro live streaming).
+                  </p>
+                </div>
+              ) : (
+                <div>
+                  <label className="block text-slate-300 font-medium mb-1">
+                    Deepgram API Key <span className="text-rose-400">*</span>
+                  </label>
+                  <input
+                    type="password"
+                    value={formData.deepgramApiKey}
+                    onChange={(e) => setFormData({ ...formData, deepgramApiKey: e.target.value })}
+                    placeholder="Enter your Deepgram API Key (nova-2 streaming)"
+                    className="w-full bg-slate-950 border border-white/10 rounded px-3 py-2 text-slate-100 placeholder-slate-600 focus:outline-none focus:border-blue-500 font-mono text-xs"
+                  />
+                  <p className="text-[10px] text-slate-500 mt-1">
+                    Required for Deepgram Nova-2 real-time speech recognition. Free signup at deepgram.com
+                  </p>
+                </div>
+              )}
 
               <div>
                 <label className="block text-slate-300 font-medium mb-1">
@@ -303,6 +368,22 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
                 />
                 <p className="text-[10px] text-slate-500 mt-1">
                   Powers Gemini 1.5 Flash ultra-low latency answer streaming.
+                </p>
+              </div>
+
+              <div>
+                <label className="block text-slate-300 font-medium mb-1">
+                  Groq API Key <span className="text-emerald-400">* (Ultra-Fast 500+ tok/s)</span>
+                </label>
+                <input
+                  type="password"
+                  value={formData.groqApiKey || ''}
+                  onChange={(e) => setFormData({ ...formData, groqApiKey: e.target.value })}
+                  placeholder="gsk_..."
+                  className="w-full bg-slate-950 border border-white/10 rounded px-3 py-2 text-slate-100 placeholder-slate-600 focus:outline-none focus:border-emerald-500 font-mono text-xs"
+                />
+                <p className="text-[10px] text-slate-500 mt-1">
+                  Powers ultra-fast sub-second answer streaming with Llama/Compound models.
                 </p>
               </div>
 
@@ -399,36 +480,161 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
           {/* Tab 3: AI Model & Prompt */}
           {activeTab === 'ai' && (
             <div className="space-y-3.5">
+              {/* Language Selection */}
+              <div className="p-3 rounded-lg bg-black/40 border border-white/10 space-y-2">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-1.5">
+                    <Languages className="w-4 h-4 text-blue-400" />
+                    <label className="text-slate-200 font-semibold text-xs">
+                      Interview Language / भाषा चयन
+                    </label>
+                  </div>
+                  <span className="text-[10px] text-blue-300 font-mono uppercase bg-blue-950/60 px-2 py-0.5 rounded border border-blue-500/20">
+                    {(formData.language || 'en') === 'en' ? 'English (EN)' : formData.language === 'hi' ? 'Hindi (HI)' : 'Hinglish (Auto)'}
+                  </span>
+                </div>
+                <div className="grid grid-cols-3 gap-2">
+                  <button
+                    type="button"
+                    onClick={() => setFormData({ ...formData, language: 'en' })}
+                    className={`p-2.5 rounded-lg border text-left transition-all ${
+                      (formData.language || 'en') === 'en'
+                        ? 'bg-blue-950/70 border-blue-500 text-blue-100 ring-1 ring-blue-500'
+                        : 'bg-black/30 border-white/10 text-slate-400 hover:bg-white/5'
+                    }`}
+                  >
+                    <div className="text-xs font-semibold text-white flex items-center justify-between">
+                      <span>English</span>
+                      <span className="text-[9px] px-1.5 py-0.5 rounded bg-blue-500/20 text-blue-300 font-mono">EN</span>
+                    </div>
+                    <div className="text-[10px] text-slate-400 mt-1 leading-tight">
+                      Pure English. No Hinglish conversions. Understands English technical words.
+                    </div>
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => setFormData({ ...formData, language: 'hi' })}
+                    className={`p-2.5 rounded-lg border text-left transition-all ${
+                      formData.language === 'hi'
+                        ? 'bg-amber-950/70 border-amber-500 text-amber-100 ring-1 ring-amber-500'
+                        : 'bg-black/30 border-white/10 text-slate-400 hover:bg-white/5'
+                    }`}
+                  >
+                    <div className="text-xs font-semibold text-white flex items-center justify-between">
+                      <span>Hindi (हिंदी)</span>
+                      <span className="text-[9px] px-1.5 py-0.5 rounded bg-amber-500/20 text-amber-300 font-mono">HI</span>
+                    </div>
+                    <div className="text-[10px] text-slate-400 mt-1 leading-tight">
+                      Recognizes Hindi speech accurately. LLM creates English interview answers.
+                    </div>
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => setFormData({ ...formData, language: 'hinglish' })}
+                    className={`p-2.5 rounded-lg border text-left transition-all ${
+                      formData.language === 'hinglish'
+                        ? 'bg-purple-950/70 border-purple-500 text-purple-100 ring-1 ring-purple-500'
+                        : 'bg-black/30 border-white/10 text-slate-400 hover:bg-white/5'
+                    }`}
+                  >
+                    <div className="text-xs font-semibold text-white flex items-center justify-between">
+                      <span>Hinglish</span>
+                      <span className="text-[9px] px-1.5 py-0.5 rounded bg-purple-500/20 text-purple-300 font-mono">Auto</span>
+                    </div>
+                    <div className="text-[10px] text-slate-400 mt-1 leading-tight">
+                      Bilingual code-switching (mix of Hindi & English speech).
+                    </div>
+                  </button>
+                </div>
+              </div>
+
               <div>
                 <label className="block text-slate-300 font-medium mb-1">
                   Active AI Provider
                 </label>
-                <div className="grid grid-cols-2 gap-2">
+                <div className="grid grid-cols-3 gap-2">
                   <button
                     type="button"
-                    onClick={() => setFormData({ ...formData, aiProvider: 'gemini' })}
+                    onClick={() => setFormData({ ...formData, aiProvider: 'groq', modelName: 'qwen/qwen3.8-27b' })}
                     className={`px-3 py-2 rounded border text-left flex flex-col gap-0.5 transition-all ${
-                      formData.aiProvider === 'gemini'
-                        ? 'bg-blue-950/60 border-blue-500 text-blue-200'
+                      formData.aiProvider === 'groq'
+                        ? 'bg-emerald-950/70 border-emerald-500 text-emerald-100 ring-1 ring-emerald-500'
                         : 'bg-black/20 border-white/5 text-slate-400 hover:border-white/10'
                     }`}
                   >
-                    <span className="font-semibold text-xs">Google Gemini</span>
-                    <span className="text-[10px] text-slate-400">gemini-flash-latest (Ultra-low latency)</span>
+                    <span className="font-semibold text-xs text-emerald-300 flex items-center justify-between">
+                      <span>Groq LPU</span>
+                      <span className="text-[8px] bg-emerald-500/20 px-1 py-0.5 rounded text-emerald-300">⚡ 160ms</span>
+                    </span>
+                    <span className="text-[9px] text-slate-400">qwen-27b (500 tok/s)</span>
                   </button>
                   <button
                     type="button"
-                    onClick={() => setFormData({ ...formData, aiProvider: 'openai' })}
+                    onClick={() => setFormData({ ...formData, aiProvider: 'gemini', modelName: 'gemini-3.5-flash-lite' })}
+                    className={`px-3 py-2 rounded border text-left flex flex-col gap-0.5 transition-all ${
+                      formData.aiProvider === 'gemini'
+                        ? 'bg-blue-950/60 border-blue-500 text-blue-200 ring-1 ring-blue-500'
+                        : 'bg-black/20 border-white/5 text-slate-400 hover:border-white/10'
+                    }`}
+                  >
+                    <span className="font-semibold text-xs text-blue-300 flex items-center justify-between">
+                      <span>Gemini</span>
+                      <span className="text-[8px] bg-blue-500/20 px-1 py-0.5 rounded text-blue-300">Flash Lite</span>
+                    </span>
+                    <span className="text-[9px] text-slate-400">gemini-3.5-flash-lite</span>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setFormData({ ...formData, aiProvider: 'openai', modelName: 'gpt-4o-mini' })}
                     className={`px-3 py-2 rounded border text-left flex flex-col gap-0.5 transition-all ${
                       formData.aiProvider === 'openai'
-                        ? 'bg-blue-950/60 border-blue-500 text-blue-200'
+                        ? 'bg-purple-950/60 border-purple-500 text-purple-200 ring-1 ring-purple-500'
                         : 'bg-black/20 border-white/5 text-slate-400 hover:border-white/10'
                     }`}
                   >
                     <span className="font-semibold text-xs">OpenAI</span>
-                    <span className="text-[10px] text-slate-400">gpt-4o-mini</span>
+                    <span className="text-[9px] text-slate-400">gpt-4o-mini</span>
                   </button>
                 </div>
+              </div>
+
+              {/* Model Selection Dropdown */}
+              <div>
+                <label className="block text-slate-300 font-medium mb-1">
+                  Selected Model ({formData.aiProvider.toUpperCase()})
+                </label>
+                <select
+                  value={formData.modelName}
+                  onChange={(e) => setFormData({ ...formData, modelName: e.target.value })}
+                  className="w-full bg-slate-950 border border-white/10 rounded px-2.5 py-1.5 text-slate-100 focus:outline-none focus:border-blue-500 text-xs font-mono"
+                >
+                  {formData.aiProvider === 'groq' && (
+                    <>
+                      <option value="qwen/qwen3.8-27b">⚡ qwen/qwen3.8-27b (160ms TTFT - Super Fast & Accurate - Recommended)</option>
+                      <option value="openai/gpt-oss-20b">openai/gpt-oss-20b (500ms TTFT)</option>
+                    </>
+                  )}
+                  {formData.aiProvider === 'gemini' && (
+                    <>
+                      <option value="gemini-3.5-flash-lite">⚡ gemini-3.5-flash-lite (Fastest Gemini - 1.4s TTFT - Recommended)</option>
+                      <option value="gemini-flash-lite-latest">gemini-flash-lite-latest (Stable Flash Lite)</option>
+                      <option value="gemini-3.5-flash">gemini-3.5-flash (Standard Quality)</option>
+                    </>
+                  )}
+                  {formData.aiProvider === 'openai' && (
+                    <>
+                      <option value="gpt-4o-mini">gpt-4o-mini (Fast)</option>
+                      <option value="gpt-4o">gpt-4o (High Intelligence)</option>
+                    </>
+                  )}
+                </select>
+                <p className="text-[10px] text-slate-500 mt-1">
+                  {formData.aiProvider === 'groq' && '⚡ Groq LPU delivers answers in ~500ms (5x to 8x faster than traditional cloud APIs).'}
+                  {formData.aiProvider === 'gemini' && 'Google Gemini Flash Lite streams answers with deep knowledge and minimal latency.'}
+                  {formData.aiProvider === 'openai' && 'OpenAI Chat Completions streaming.'}
+                </p>
               </div>
 
               <div>
@@ -455,6 +661,34 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
               </div>
 
               <div className="space-y-2">
+                {/* Instant QA Bank Toggle */}
+                <div className="flex items-center justify-between p-2.5 rounded-lg bg-black/40 border border-white/10">
+                  <div className="pr-3">
+                    <div className="flex items-center gap-2">
+                      <Zap className="w-3.5 h-3.5 text-amber-400" />
+                      <span className="font-semibold text-xs text-slate-200">Instant QA Bank (Offline 0ms Cache)</span>
+                      <span
+                        className={`text-[9px] px-1.5 py-0.5 rounded font-mono font-bold ${
+                          formData.enableInstantQABank !== false
+                            ? 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/30'
+                            : 'bg-slate-800 text-slate-400 border border-white/10'
+                        }`}
+                      >
+                        {formData.enableInstantQABank !== false ? 'ENABLED' : 'DISABLED'}
+                      </span>
+                    </div>
+                    <p className="text-[10px] text-slate-400 mt-1 leading-relaxed">
+                      Instant 0ms answers for standard textbook questions. Turn <strong>OFF</strong> if you want Live AI (Groq / Gemini) to dynamically answer all questions with live context & custom code.
+                    </p>
+                  </div>
+                  <input
+                    type="checkbox"
+                    checked={formData.enableInstantQABank !== false}
+                    onChange={(e) => setFormData({ ...formData, enableInstantQABank: e.target.checked })}
+                    className="w-4 h-4 rounded text-blue-500 focus:ring-0 bg-slate-800 border-slate-600 cursor-pointer"
+                  />
+                </div>
+
                 <div className="flex items-center justify-between p-2 rounded bg-black/20 border border-white/5">
                   <div>
                     <span className="font-medium text-slate-200">Auto-Generate on Speech Pause</span>
@@ -568,9 +802,64 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
                           : 'bg-black/20 text-slate-400 border-white/5 hover:bg-white/5'
                       }`}
                     >
-                      {size === 'sm' ? 'Compact (Small)' : size === 'base' ? 'Standard' : 'Large'}
+                      {size === 'sm' ? 'Compact (11px)' : size === 'base' ? 'Standard (12px)' : 'Large (13px)'}
                     </button>
                   ))}
+                </div>
+              </div>
+
+              {/* Dynamic Auto-Expand Window Height */}
+              <div className="p-2.5 rounded bg-black/30 border border-white/5">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <span className="font-medium text-slate-200">Dynamic Auto-Expand Window</span>
+                    <p className="text-[10px] text-slate-500">
+                      Automatically expands the window downwards when answers are long so all bullet points fit on screen.
+                    </p>
+                  </div>
+                  <input
+                    type="checkbox"
+                    checked={formData.autoExpandWindow ?? true}
+                    onChange={(e) => setFormData({ ...formData, autoExpandWindow: e.target.checked })}
+                    className="w-4 h-4 rounded text-blue-500 focus:ring-0 bg-slate-800 border-slate-600 cursor-pointer"
+                  />
+                </div>
+              </div>
+
+              {/* Taskbar & Tray Stealth Options */}
+              <div className="p-2.5 rounded bg-black/30 border border-white/5 space-y-2.5">
+                <span className="font-semibold text-slate-300">OS Taskbar & Tray Stealth</span>
+                
+                {/* Hide from Taskbar */}
+                <div className="flex items-center justify-between">
+                  <div>
+                    <span className="font-medium text-slate-200">Hide from Windows Taskbar</span>
+                    <p className="text-[10px] text-slate-500">
+                      Overlay does not appear in the Windows taskbar or Alt+Tab switcher.
+                    </p>
+                  </div>
+                  <input
+                    type="checkbox"
+                    checked={formData.hideFromTaskbar ?? true}
+                    onChange={(e) => setFormData({ ...formData, hideFromTaskbar: e.target.checked })}
+                    className="w-4 h-4 rounded text-blue-500 focus:ring-0 bg-slate-800 border-slate-600"
+                  />
+                </div>
+
+                {/* Show System Tray Icon */}
+                <div className="flex items-center justify-between pt-1 border-t border-white/5">
+                  <div>
+                    <span className="font-medium text-slate-200">Show System Tray Icon</span>
+                    <p className="text-[10px] text-slate-500">
+                      Show quick-access icon in notification area (near clock). Disable for 100% invisible operation.
+                    </p>
+                  </div>
+                  <input
+                    type="checkbox"
+                    checked={formData.showSystemTray ?? true}
+                    onChange={(e) => setFormData({ ...formData, showSystemTray: e.target.checked })}
+                    className="w-4 h-4 rounded text-blue-500 focus:ring-0 bg-slate-800 border-slate-600"
+                  />
                 </div>
               </div>
 
@@ -587,6 +876,12 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
                   <span>Toggle Click-Through Mode</span>
                   <kbd className="px-1.5 py-0.5 rounded bg-slate-800 border border-white/10 text-slate-200 font-mono">
                     Ctrl + Shift + X
+                  </kbd>
+                </div>
+                <div className="flex justify-between text-[11px] text-slate-400">
+                  <span>Emergency Quit App</span>
+                  <kbd className="px-1.5 py-0.5 rounded bg-slate-800 border border-white/10 text-slate-200 font-mono">
+                    Ctrl + Shift + Q
                   </kbd>
                 </div>
               </div>

@@ -1,3 +1,5 @@
+import { LanguageMode } from '../types';
+
 const FILLER_PHRASES = new Set([
   'yeah',
   'yes',
@@ -49,7 +51,7 @@ const FILLER_PHRASES = new Set([
   'thank you so much',
 ]);
 
-const QUESTION_STARTERS = [
+const ENGLISH_QUESTION_STARTERS = [
   'what',
   'why',
   'how',
@@ -132,7 +134,9 @@ const QUESTION_STARTERS = [
   'paging 3',
   'data binding',
   'view binding',
-  // Hinglish / Hindi Common Interview Question Starters
+];
+
+const HINDI_QUESTION_STARTERS = [
   'kya',
   'kaise',
   'kyu',
@@ -140,11 +144,34 @@ const QUESTION_STARTERS = [
   'batao',
   'bataiye',
   'explain karo',
+  'samjhao',
   'kaunsa',
   'difference kya',
   'karna hai',
   'use kiya',
+  'kya hota',
+  'kaise kaam',
+  'kab use',
+  'kaise use',
+  'kaise work',
+  'kya hai',
+  'kya difference',
+  'क्या',
+  'कैसे',
+  'क्यों',
+  'बताओ',
+  'बताइए',
+  'समझाओ',
+  'अंतर',
+  'डिफरेंस',
 ];
+
+function getQuestionStarters(lang: LanguageMode = 'en'): string[] {
+  if (lang === 'en') {
+    return ENGLISH_QUESTION_STARTERS;
+  }
+  return [...ENGLISH_QUESTION_STARTERS, ...HINDI_QUESTION_STARTERS];
+}
 
 /**
  * Checks whether an utterance has substantive content (not merely conversational filler).
@@ -165,13 +192,14 @@ export function isSubstantiveTurn(text: string): boolean {
 /**
  * Detects if an utterance is explicitly phrased as a question (strict mode for candidate speech).
  */
-export function isExplicitQuestion(text: string): boolean {
+export function isExplicitQuestion(text: string, lang: LanguageMode = 'en'): boolean {
   if (!text || text.trim().length < 4) return false;
   const trimmed = text.trim().toLowerCase();
 
   if (trimmed.includes('?')) return true;
 
-  for (const starter of QUESTION_STARTERS) {
+  const starters = getQuestionStarters(lang);
+  for (const starter of starters) {
     if (trimmed.startsWith(starter) || trimmed.includes(` ${starter} `)) {
       return true;
     }
@@ -183,7 +211,7 @@ export function isExplicitQuestion(text: string): boolean {
 /**
  * Detects if an utterance is phrased as a question, technical prompt, or problem statement.
  */
-export function isQuestionOrPrompt(text: string): boolean {
+export function isQuestionOrPrompt(text: string, lang: LanguageMode = 'en'): boolean {
   if (!isSubstantiveTurn(text)) return false;
 
   const trimmed = text.trim().toLowerCase();
@@ -192,7 +220,8 @@ export function isQuestionOrPrompt(text: string): boolean {
   if (trimmed.includes('?')) return true;
 
   // 2. Starts with or includes any common interview question or prompt phrase
-  for (const starter of QUESTION_STARTERS) {
+  const starters = getQuestionStarters(lang);
+  for (const starter of starters) {
     if (trimmed.startsWith(starter) || trimmed.includes(` ${starter} `)) {
       return true;
     }
@@ -213,9 +242,46 @@ export function isQuestionOrPrompt(text: string): boolean {
 }
 
 /**
+ * Extracts clean technical question intent from conversational speech
+ * (e.g. "Hello Sumit what is Kotlin explain ahdbh etc" -> "what is Kotlin explain")
+ */
+export function extractCoreQuestion(rawText: string): string {
+  if (!rawText) return '';
+  let cleaned = rawText.trim();
+
+  // Strip conversational greeting prefixes like "hello sumit", "hey sumit", "hi", "so basically"
+  cleaned = cleaned.replace(/^(hello|hi|hey|ok|okay|so|yes|yeah|sure)\s+(sumit|candidate|there)?\s*,?\s*/i, '');
+  cleaned = cleaned.replace(/^(can you|could you|would you|please|tell me|tell us)\s+/i, '');
+
+  // Strip trailing vocal filler, slips or mumbling (e.g. "ahdbh", "etc", "um", "uh")
+  cleaned = cleaned.replace(/\s+(ahdbh|adhb|etc|um+|uh+|er+|ah+|blah blah|so on)\b.*$/i, '');
+  cleaned = cleaned.replace(/\s+[a-z]{1,2}$/i, ''); // strip single hanging letters at end
+
+  return cleaned.trim() || rawText.trim();
+}
+
+/**
+ * Fast check if incoming speech chunk contains strong technical interview question intent
+ */
+export function hasLiveQuestionIntent(text: string, lang: LanguageMode = 'en'): boolean {
+  if (!text || text.trim().length < 8) return false;
+  const lower = text.toLowerCase();
+
+  if (lower.includes('?')) return true;
+
+  const starters = getQuestionStarters(lang);
+  for (const starter of starters) {
+    if (lower.startsWith(starter) || lower.includes(` ${starter} `) || lower.includes(` ${starter}`)) {
+      return true;
+    }
+  }
+
+  return false;
+}
+
+/**
  * Stitches together the complete question from recent consecutive speech utterances.
- * Prevents fragmented speech (e.g. "What is" -> "kotlin" -> "what is" -> "benefits")
- * from triggering answers on disconnected trailing pieces like "benefits".
+ * Prevents fragmented speech from triggering answers on disconnected trailing pieces.
  */
 export function getFullQuestion(
   role: 'interviewer' | 'candidate' | 'system',
@@ -225,7 +291,7 @@ export function getFullQuestion(
   const now = Date.now();
   const consecutiveTexts: string[] = [];
 
-  // Traverse transcripts backward to gather all recent utterances from the same speaker
+  // Traverse transcripts backward to gather recent utterances from the same speaker (last 9 seconds)
   for (let i = transcripts.length - 1; i >= 0; i--) {
     const entry = transcripts[i];
     // Stop if the other speaker spoke a substantive statement
@@ -235,8 +301,8 @@ export function getFullQuestion(
       }
       continue;
     }
-    // Stop if older than 25 seconds
-    if (now - entry.timestamp > 25000) {
+    // Stop if older than 9 seconds
+    if (now - entry.timestamp > 9000) {
       break;
     }
     const t = entry.text.trim();
@@ -258,5 +324,5 @@ export function getFullQuestion(
 
   // Remove duplicate adjacent phrases caused by streaming STT stutter (e.g. "what is what is" -> "what is")
   const cleaned = full.replace(/\b([a-zA-Z]+(?:\s+[a-zA-Z]+)?)\s+\1\b/gi, '$1');
-  return cleaned || full;
+  return extractCoreQuestion(cleaned || full);
 }

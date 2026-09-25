@@ -141,10 +141,12 @@ mainWindow.setContentProtection(true);
    - **Solution:** We implement dynamic mouse forwarding via `mainWindow.setIgnoreMouseEvents(ignore, { forward: true })`. Mouse clicks pass cleanly through transparent areas to your underlying browser or IDE, and the cursor does not betray the overlay's presence.
 2. **Keyboard Focus:**
    - In technical coding interviews, you will type in CoderPad, LeetCode, or VS Code. The HUD operates without stealing focus (`mainWindow.showInactive()`), ensuring your cursor remains active in your coding editor.
-3. **Taskbar & Window Switcher:**
-   - You can toggle `skipTaskbar: true` in `electron/main.ts` to prevent the app icon from appearing in the Windows Taskbar or Alt+Tab switcher.
-4. **Emergency Panic Shortcut:**
+3. **Taskbar & Window Switcher Stealth:**
+   - `skipTaskbar: true` is enabled by default to prevent the app icon from appearing in the Windows Taskbar or Alt+Tab switcher.
+   - Can also be customized in **Settings > Stealth HUD**.
+4. **Emergency Panic & Quit Shortcuts:**
    - Press **`Ctrl + Shift + H`** (or **`Cmd + Shift + H`** on macOS) to instantly hide or restore the overlay.
+   - Press **`Ctrl + Shift + Q`** (or **`Cmd + Shift + Q`** on macOS) to immediately quit the application.
 
 ---
 

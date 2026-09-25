@@ -19,9 +19,28 @@ export interface AISuggestion {
   isPinned?: boolean;
 }
 
-export type AIProvider = 'gemini' | 'openai';
+export interface QALogEntry {
+  id: string;
+  timestamp: number;
+  timeString: string;
+  speaker: SpeakerRole;
+  question: string;
+  answer: string;
+  provider: string;
+  model?: string;
+  latencyMs?: number;
+  source?: 'stt-auto' | 'stt-enter' | 'manual' | 'vision' | 'instant-qa' | 'simulate' | 'clipboard';
+}
+
+export type AIProvider = 'gemini' | 'openai' | 'groq';
+export type STTProvider = 'assemblyai' | 'deepgram' | 'groq';
+export type LanguageMode = 'en' | 'hi' | 'hinglish';
 
 export interface AppSettings {
+  language?: LanguageMode;
+  sttProvider?: STTProvider;
+  assemblyaiApiKey?: string;
+  groqApiKey: string;
   deepgramApiKey: string;
   geminiApiKey: string;
   openaiApiKey: string;
@@ -30,6 +49,7 @@ export interface AppSettings {
   systemPrompt: string;
   opacity: number;
   fontSize: 'sm' | 'base' | 'lg';
+  autoExpandWindow?: boolean;
   autoGenerateAnswer: boolean;
   autoTriggerSpeaker?: 'both' | 'interviewer' | 'candidate';
   contentProtection: boolean;
@@ -38,6 +58,9 @@ export interface AppSettings {
   audioGainBoost?: number;
   candidateProfileName?: string;
   androidKeywordsBoost?: boolean;
+  enableInstantQABank?: boolean;
+  hideFromTaskbar?: boolean;
+  showSystemTray?: boolean;
 }
 
 export interface AudioDevice {

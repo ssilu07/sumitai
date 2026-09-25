@@ -10,6 +10,7 @@ export interface AudioCaptureCallbacks {
 export class DualChannelAudioCapture {
   private micStream: MediaStream | null = null;
   private speakerStream: MediaStream | null = null;
+  private activeDisplayStream: MediaStream | null = null;
   private videoTracksToCleanup: MediaStreamTrack[] = [];
   private audioContext: AudioContext | null = null;
 
@@ -201,9 +202,12 @@ export class DualChannelAudioCapture {
             audio: true,
           });
 
-          // Disable video tracks without stopping them (stopping kills the entire desktop capture session in Chromium!)
+          // CRITICAL FIX: DO NOT set track.enabled = false!
+          // In Chromium/Electron on Windows, setting track.enabled = false on a display video track
+          // signals that the capture session is idle, which pauses/halts the loopback audio stream!
+          // Instead, keep track.enabled = true, don't render the video element, and stop cleanly on teardown.
+          this.activeDisplayStream = displayStream;
           displayStream.getVideoTracks().forEach((track) => {
-            track.enabled = false;
             this.videoTracksToCleanup.push(track);
           });
 
@@ -272,8 +276,8 @@ export class DualChannelAudioCapture {
               },
             });
 
+            this.activeDisplayStream = stream;
             stream.getVideoTracks().forEach((track: MediaStreamTrack) => {
-              track.enabled = false;
               this.videoTracksToCleanup.push(track);
             });
 
@@ -489,6 +493,13 @@ export class DualChannelAudioCapture {
     }
 
     // Cleanly stop any video tracks associated with desktop loopback capture
+    if (this.activeDisplayStream) {
+      try {
+        this.activeDisplayStream.getTracks().forEach((track) => track.stop());
+      } catch (e) {}
+      this.activeDisplayStream = null;
+    }
+
     this.videoTracksToCleanup.forEach((track) => {
       try {
         track.stop();
@@ -502,6 +513,54 @@ export class DualChannelAudioCapture {
     }
 
     console.log('[AudioCapture] Stopped all audio capture streams.');
+  }
+
+  /**
+   * Captures a single image snapshot from the active display stream (if loopback screen audio capture is active)
+   */
+  async captureCurrentFrame(): Promise<string | null> {
+    if (!this.activeDisplayStream) return null;
+    const videoTrack = this.activeDisplayStream.getVideoTracks().find((t) => t.readyState === 'live');
+    if (!videoTrack) return null;
+
+    try {
+      const video = document.createElement('video');
+      video.srcObject = new MediaStream([videoTrack]);
+      video.muted = true;
+      video.playsInline = true;
+      await video.play();
+
+      await new Promise<void>((resolve) => {
+        if (video.videoWidth > 0 && video.videoHeight > 0) {
+          resolve();
+        } else {
+          video.onloadeddata = () => resolve();
+          setTimeout(resolve, 300);
+        }
+      });
+
+      // If dimensions are <= 100, this might be a minimized/dummy stream, so fallback to desktop capture
+      if (video.videoWidth <= 100 || video.videoHeight <= 100) {
+        video.srcObject = null;
+        return null;
+      }
+
+      const canvas = document.createElement('canvas');
+      canvas.width = video.videoWidth;
+      canvas.height = video.videoHeight;
+      const ctx = canvas.getContext('2d');
+      if (!ctx) {
+        video.srcObject = null;
+        return null;
+      }
+      ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+      const dataUrl = canvas.toDataURL('image/png');
+      video.srcObject = null;
+      return (dataUrl && dataUrl.length > 100) ? dataUrl : null;
+    } catch (e) {
+      console.warn('[AudioCapture] Failed to grab frame from active display stream:', e);
+      return null;
+    }
   }
 
   getIsRunning(): boolean {

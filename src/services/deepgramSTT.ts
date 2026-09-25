@@ -1,4 +1,4 @@
-import { SpeakerRole } from '../types';
+import { LanguageMode, SpeakerRole } from '../types';
 import { ANDROID_STT_KEYWORDS } from './androidKnowledge';
 import { normalizeTechnicalTranscript } from './phoneticNormalizer';
 
@@ -17,6 +17,7 @@ export class DeepgramLiveStreamer {
   private isInterviewerReady = false;
   private isCandidateReady = false;
   private customKeywords: string[] = ANDROID_STT_KEYWORDS;
+  private language: LanguageMode = 'en';
   private shouldBeConnected = false;
   private keepAliveTimer: any = null;
   private reconnectTimers: Partial<Record<SpeakerRole, any>> = {};
@@ -25,9 +26,10 @@ export class DeepgramLiveStreamer {
   private interviewerQueue: ArrayBuffer[] = [];
   private candidateQueue: ArrayBuffer[] = [];
 
-  constructor(apiKey: string, callbacks: DeepgramCallbacks, keywords?: string[]) {
+  constructor(apiKey: string, callbacks: DeepgramCallbacks, keywords?: string[], language: LanguageMode = 'en') {
     this.apiKey = apiKey;
     this.callbacks = callbacks;
+    this.language = language;
     if (keywords) {
       this.customKeywords = keywords;
     }
@@ -39,6 +41,10 @@ export class DeepgramLiveStreamer {
 
   setKeywords(keywords: string[]) {
     this.customKeywords = keywords;
+  }
+
+  setLanguage(language: LanguageMode) {
+    this.language = language;
   }
 
   /**
@@ -70,11 +76,18 @@ export class DeepgramLiveStreamer {
       // - vad_events=true: Voice activity detection
       const url = new URL('wss://api.deepgram.com/v1/listen');
       url.searchParams.append('model', 'nova-2');
+      if (this.language === 'en') {
+        url.searchParams.append('language', 'en');
+      } else if (this.language === 'hi') {
+        url.searchParams.append('language', 'hi');
+      } else {
+        url.searchParams.append('language', 'multi');
+      }
       url.searchParams.append('smart_format', 'true');
       url.searchParams.append('interim_results', 'true');
       url.searchParams.append('utterance_end_ms', '1000');
       url.searchParams.append('vad_events', 'true');
-      url.searchParams.append('endpointing', '450');
+      url.searchParams.append('endpointing', this.language === 'hinglish' ? '100' : '450');
       url.searchParams.append('encoding', 'linear16');
       url.searchParams.append('sample_rate', '16000');
       url.searchParams.append('channels', '1');
@@ -97,7 +110,7 @@ export class DeepgramLiveStreamer {
       ws.binaryType = 'arraybuffer';
 
       ws.onopen = () => {
-        console.log(`[Deepgram] WebSocket connected for ${role}`);
+        console.log(`[Deepgram] WebSocket connected for ${role} (lang: ${this.language})`);
         if (role === 'interviewer') {
           this.isInterviewerReady = true;
           // Flush any buffered chunks
@@ -133,7 +146,7 @@ export class DeepgramLiveStreamer {
           if (data.channel && data.channel.alternatives && data.channel.alternatives.length > 0) {
             const alternative = data.channel.alternatives[0];
             const rawTranscript = alternative.transcript?.trim() || '';
-            const transcript = normalizeTechnicalTranscript(rawTranscript);
+            const transcript = normalizeTechnicalTranscript(rawTranscript, this.language);
             const isFinal = Boolean(data.is_final);
             const speechFinal = Boolean(data.speech_final);
 
