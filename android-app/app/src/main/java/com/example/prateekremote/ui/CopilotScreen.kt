@@ -443,23 +443,136 @@ fun CopilotScreen(
                 }
             }
 
-            // ── 3. Giant Tactile "Generate Answer" Touchpad (Replaces streaming card) ──
+            val currentSuggestion = uiState.currentSuggestion
+            val hasAnswer = currentSuggestion != null && (
+                currentSuggestion.bullets.isNotEmpty() ||
+                currentSuggestion.isStreaming ||
+                currentSuggestion.question.isNotBlank()
+            )
+
+            // ── 3. Live Streaming Answer Card (Displays when answer exists or streaming) ──
+            if (currentSuggestion != null && hasAnswer) {
+                Card(
+                    shape = RoundedCornerShape(16.dp),
+                    colors = CardDefaults.cardColors(containerColor = CardBackground),
+                    border = androidx.compose.foundation.BorderStroke(
+                        1.dp,
+                        if (currentSuggestion.isStreaming) EmeraldGreen.copy(alpha = 0.6f) else Color.White.copy(alpha = 0.1f)
+                    ),
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    Column(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(14.dp),
+                        verticalArrangement = Arrangement.spacedBy(10.dp)
+                    ) {
+                        // Header: Title + Streaming Pill + Copy Button
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.SpaceBetween,
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Row(
+                                verticalAlignment = Alignment.CenterVertically,
+                                horizontalArrangement = Arrangement.spacedBy(6.dp)
+                            ) {
+                                Text(
+                                    text = if (uiState.isCodingMode) "💻 Kotlin Solution" else "💡 Live Answer",
+                                    fontSize = 14.sp,
+                                    fontWeight = FontWeight.Bold,
+                                    color = Color.White
+                                )
+                                if (currentSuggestion.isStreaming) {
+                                    Surface(
+                                        shape = RoundedCornerShape(10.dp),
+                                        color = EmeraldGreen.copy(alpha = 0.2f),
+                                        border = androidx.compose.foundation.BorderStroke(1.dp, EmeraldGreen.copy(alpha = 0.5f))
+                                    ) {
+                                        Text(
+                                            text = "● STREAMING",
+                                            fontSize = 9.sp,
+                                            fontWeight = FontWeight.Bold,
+                                            color = EmeraldGreen,
+                                            modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp)
+                                        )
+                                    }
+                                }
+                            }
+
+                            FilledTonalButton(
+                                onClick = {
+                                    val fullText = currentSuggestion.bullets.joinToString("\n")
+                                    copyToClipboard(context, fullText)
+                                },
+                                contentPadding = PaddingValues(horizontal = 10.dp, vertical = 4.dp),
+                                colors = ButtonDefaults.filledTonalButtonColors(
+                                    containerColor = Color.White.copy(alpha = 0.08f),
+                                    contentColor = PrimaryCyan
+                                ),
+                                shape = RoundedCornerShape(8.dp),
+                                modifier = Modifier.height(28.dp)
+                            ) {
+                                Text("📋 Copy", fontSize = 11.sp, fontWeight = FontWeight.SemiBold)
+                            }
+                        }
+
+                        // Question Badge
+                        if (currentSuggestion.question.isNotBlank()) {
+                            Surface(
+                                shape = RoundedCornerShape(8.dp),
+                                color = Color.White.copy(alpha = 0.04f),
+                                border = androidx.compose.foundation.BorderStroke(1.dp, Color.White.copy(alpha = 0.07f)),
+                                modifier = Modifier.fillMaxWidth()
+                            ) {
+                                Text(
+                                    text = "❓ ${currentSuggestion.question}",
+                                    fontSize = 12.sp,
+                                    fontWeight = FontWeight.Medium,
+                                    color = TextMuted,
+                                    modifier = Modifier.padding(horizontal = 10.dp, vertical = 7.dp)
+                                )
+                            }
+                        }
+
+                        // Bullets list
+                        Column(
+                            verticalArrangement = Arrangement.spacedBy(8.dp),
+                            modifier = Modifier.fillMaxWidth()
+                        ) {
+                            if (currentSuggestion.bullets.isEmpty() && currentSuggestion.isStreaming) {
+                                Text(
+                                    text = "Formulating response...",
+                                    fontSize = 13.sp,
+                                    color = EmeraldGreen
+                                )
+                            } else {
+                                currentSuggestion.bullets.forEach { bullet ->
+                                    BulletItem(bullet)
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+
+            // ── 4. Tactile "Generate Answer" Touchpad / Action Bar ──
             Card(
-                shape = RoundedCornerShape(20.dp),
+                shape = RoundedCornerShape(18.dp),
                 colors = CardDefaults.cardColors(
                     containerColor = if (uiState.isCodingMode) Color(0xFF07232F) else Color(0xFF0C192E)
                 ),
                 border = androidx.compose.foundation.BorderStroke(
-                    2.dp,
+                    if (hasAnswer) 1.dp else 2.dp,
                     if (uiState.currentSuggestion?.isStreaming == true)
                         (if (uiState.isCodingMode) EmeraldGreen else PrimaryCyan)
                     else
                         (if (uiState.isCodingMode) EmeraldGreen.copy(alpha = 0.55f) else PrimaryCyan.copy(alpha = 0.45f))
                 ),
-                elevation = CardDefaults.cardElevation(defaultElevation = 8.dp),
+                elevation = CardDefaults.cardElevation(defaultElevation = 6.dp),
                 modifier = Modifier
                     .fillMaxWidth()
-                    .defaultMinSize(minHeight = 240.dp)
+                    .defaultMinSize(minHeight = if (hasAnswer) 76.dp else 220.dp)
             ) {
                 Surface(
                     onClick = {
@@ -467,12 +580,11 @@ fun CopilotScreen(
                         viewModel.generateAnswer()
                     },
                     color = Color.Transparent,
-                    shape = RoundedCornerShape(20.dp)
+                    shape = RoundedCornerShape(18.dp)
                 ) {
                     Box(
                         modifier = Modifier
                             .fillMaxWidth()
-                            .defaultMinSize(minHeight = 240.dp)
                             .background(
                                 brush = Brush.verticalGradient(
                                     if (uiState.isCodingMode) listOf(
@@ -486,53 +598,57 @@ fun CopilotScreen(
                                     )
                                 )
                             )
-                            .padding(20.dp),
+                            .padding(if (hasAnswer) 12.dp else 20.dp),
                         contentAlignment = Alignment.Center
                     ) {
-                        Column(
-                            horizontalAlignment = Alignment.CenterHorizontally,
-                            verticalArrangement = Arrangement.Center
-                        ) {
-                            // Big Tactile Icon
-                            Box(
-                                modifier = Modifier
-                                    .size(72.dp)
-                                    .clip(RoundedCornerShape(20.dp))
-                                    .background(
-                                        brush = Brush.linearGradient(
-                                            if (uiState.isCodingMode) listOf(EmeraldGreen, Color(0xFF0284C7))
-                                            else listOf(PrimaryCyan, AccentBlue)
-                                        )
-                                    ),
-                                contentAlignment = Alignment.Center
-                            ) {
-                                Text(
-                                    text = if (uiState.currentSuggestion?.isStreaming == true) "⏳" else "↵",
-                                    fontSize = 38.sp,
-                                    fontWeight = FontWeight.ExtraBold,
-                                    color = Color.White
-                                )
-                            }
-
-                            Spacer(modifier = Modifier.height(16.dp))
-
-                            // Action Title
+                        if (hasAnswer) {
                             Row(
-                                verticalAlignment = Alignment.CenterVertically,
-                                horizontalArrangement = Arrangement.spacedBy(8.dp)
+                                modifier = Modifier.fillMaxWidth(),
+                                horizontalArrangement = Arrangement.SpaceBetween,
+                                verticalAlignment = Alignment.CenterVertically
                             ) {
-                                Text(
-                                    text = if (uiState.currentSuggestion?.isStreaming == true)
-                                        "GENERATING ANSWER..."
-                                    else if (uiState.isCodingMode)
-                                        "GENERATE KOTLIN CODE"
-                                    else
-                                        "GENERATE ANSWER",
-                                    fontSize = 18.sp,
-                                    fontWeight = FontWeight.ExtraBold,
-                                    color = Color.White,
-                                    letterSpacing = 0.5.sp
-                                )
+                                Row(
+                                    verticalAlignment = Alignment.CenterVertically,
+                                    horizontalArrangement = Arrangement.spacedBy(10.dp)
+                                ) {
+                                    Box(
+                                        modifier = Modifier
+                                            .size(40.dp)
+                                            .clip(RoundedCornerShape(10.dp))
+                                            .background(
+                                                brush = Brush.linearGradient(
+                                                    if (uiState.isCodingMode) listOf(EmeraldGreen, Color(0xFF0284C7))
+                                                    else listOf(PrimaryCyan, AccentBlue)
+                                                )
+                                            ),
+                                        contentAlignment = Alignment.Center
+                                    ) {
+                                        Text(
+                                            text = if (uiState.currentSuggestion?.isStreaming == true) "⏳" else "↵",
+                                            fontSize = 20.sp,
+                                            fontWeight = FontWeight.ExtraBold,
+                                            color = Color.White
+                                        )
+                                    }
+                                    Column {
+                                        Text(
+                                            text = if (uiState.currentSuggestion?.isStreaming == true)
+                                                "GENERATING ANSWER..."
+                                            else if (uiState.isCodingMode)
+                                                "GENERATE KOTLIN CODE"
+                                            else
+                                                "GENERATE ANSWER",
+                                            fontSize = 14.sp,
+                                            fontWeight = FontWeight.Bold,
+                                            color = Color.White
+                                        )
+                                        Text(
+                                            text = "Tap to trigger answer from audio",
+                                            fontSize = 11.sp,
+                                            color = TextMuted
+                                        )
+                                    }
+                                }
 
                                 Surface(
                                     shape = RoundedCornerShape(6.dp),
@@ -544,69 +660,133 @@ fun CopilotScreen(
                                 ) {
                                     Text(
                                         text = if (uiState.isCodingMode) "KOTLIN" else "ENTER",
-                                        fontSize = 11.sp,
+                                        fontSize = 10.sp,
                                         fontWeight = FontWeight.Bold,
                                         color = if (uiState.isCodingMode) EmeraldGreen else PrimaryCyan,
-                                        modifier = Modifier.padding(horizontal = 7.dp, vertical = 2.dp)
+                                        modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp)
                                     )
                                 }
                             }
-
-                            Spacer(modifier = Modifier.height(8.dp))
-
-                            // Subtitle description
-                            Text(
-                                text = if (uiState.currentSuggestion?.isStreaming == true)
-                                    "● AI is formulating and streaming answer onto PC HUD..."
-                                else if (uiState.inputText.isNotBlank())
-                                    "Tap anywhere here to send typed query & generate answer"
-                                else if (uiState.isCodingMode)
-                                    "Touch anywhere in this box to formulate Kotlin code from audio"
-                                else
-                                    "Touch anywhere in this box to trigger instant answer (Enter)",
-                                fontSize = 12.5.sp,
-                                color = if (uiState.currentSuggestion?.isStreaming == true)
-                                    EmeraldGreen
-                                else
-                                    TextLight.copy(alpha = 0.85f),
-                                textAlign = androidx.compose.ui.text.style.TextAlign.Center,
-                                modifier = Modifier.padding(horizontal = 16.dp)
-                            )
-
-                            Spacer(modifier = Modifier.height(14.dp))
-
-                            // Status Pill
-                            Surface(
-                                shape = RoundedCornerShape(20.dp),
-                                color = Color.Black.copy(alpha = 0.4f),
-                                border = androidx.compose.foundation.BorderStroke(
-                                    1.dp,
-                                    if (uiState.currentSuggestion?.isStreaming == true) EmeraldGreen.copy(alpha = 0.5f) else Color.White.copy(alpha = 0.12f)
-                                )
+                        } else {
+                            Column(
+                                horizontalAlignment = Alignment.CenterHorizontally,
+                                verticalArrangement = Arrangement.Center
                             ) {
-                                Row(
-                                    modifier = Modifier.padding(horizontal = 12.dp, vertical = 6.dp),
-                                    verticalAlignment = Alignment.CenterVertically,
-                                    horizontalArrangement = Arrangement.spacedBy(6.dp)
-                                ) {
-                                    Box(
-                                        modifier = Modifier
-                                            .size(8.dp)
-                                            .clip(CircleShape)
-                                            .background(
-                                                if (uiState.currentSuggestion?.isStreaming == true) EmeraldGreen
-                                                else if (uiState.isConnected) PrimaryCyan
-                                                else Color(0xFF64748B)
+                                // Big Tactile Icon
+                                Box(
+                                    modifier = Modifier
+                                        .size(72.dp)
+                                        .clip(RoundedCornerShape(20.dp))
+                                        .background(
+                                            brush = Brush.linearGradient(
+                                                if (uiState.isCodingMode) listOf(EmeraldGreen, Color(0xFF0284C7))
+                                                else listOf(PrimaryCyan, AccentBlue)
                                             )
-                                    )
+                                        ),
+                                    contentAlignment = Alignment.Center
+                                ) {
                                     Text(
-                                        text = if (uiState.currentSuggestion?.isStreaming == true) "STREAMING TO PC HUD"
-                                        else if (uiState.isConnected) "PC COPILOT LINKED"
-                                        else "OFFLINE (CHECK IP)",
-                                        fontSize = 10.5.sp,
-                                        fontWeight = FontWeight.Bold,
-                                        color = if (uiState.currentSuggestion?.isStreaming == true) EmeraldGreen else TextMuted
+                                        text = if (uiState.currentSuggestion?.isStreaming == true) "⏳" else "↵",
+                                        fontSize = 38.sp,
+                                        fontWeight = FontWeight.ExtraBold,
+                                        color = Color.White
                                     )
+                                }
+
+                                Spacer(modifier = Modifier.height(16.dp))
+
+                                // Action Title
+                                Row(
+                                    verticalAlignment = Alignment.CenterVertically,
+                                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                                ) {
+                                    Text(
+                                        text = if (uiState.currentSuggestion?.isStreaming == true)
+                                            "GENERATING ANSWER..."
+                                        else if (uiState.isCodingMode)
+                                            "GENERATE KOTLIN CODE"
+                                        else
+                                            "GENERATE ANSWER",
+                                        fontSize = 18.sp,
+                                        fontWeight = FontWeight.ExtraBold,
+                                        color = Color.White,
+                                        letterSpacing = 0.5.sp
+                                    )
+
+                                    Surface(
+                                        shape = RoundedCornerShape(6.dp),
+                                        color = if (uiState.isCodingMode) EmeraldGreen.copy(alpha = 0.25f) else PrimaryCyan.copy(alpha = 0.25f),
+                                        border = androidx.compose.foundation.BorderStroke(
+                                            1.dp,
+                                            if (uiState.isCodingMode) EmeraldGreen else PrimaryCyan
+                                        )
+                                    ) {
+                                        Text(
+                                            text = if (uiState.isCodingMode) "KOTLIN" else "ENTER",
+                                            fontSize = 11.sp,
+                                            fontWeight = FontWeight.Bold,
+                                            color = if (uiState.isCodingMode) EmeraldGreen else PrimaryCyan,
+                                            modifier = Modifier.padding(horizontal = 7.dp, vertical = 2.dp)
+                                        )
+                                    }
+                                }
+
+                                Spacer(modifier = Modifier.height(8.dp))
+
+                                // Subtitle description
+                                Text(
+                                    text = if (uiState.currentSuggestion?.isStreaming == true)
+                                        "● AI is formulating and streaming answer onto PC HUD..."
+                                    else if (uiState.inputText.isNotBlank())
+                                        "Tap anywhere here to send typed query & generate answer"
+                                    else if (uiState.isCodingMode)
+                                        "Touch anywhere in this box to formulate Kotlin code from audio"
+                                    else
+                                        "Touch anywhere in this box to trigger instant answer (Enter)",
+                                    fontSize = 12.5.sp,
+                                    color = if (uiState.currentSuggestion?.isStreaming == true)
+                                        EmeraldGreen
+                                    else
+                                        TextLight.copy(alpha = 0.85f),
+                                    textAlign = androidx.compose.ui.text.style.TextAlign.Center,
+                                    modifier = Modifier.padding(horizontal = 16.dp)
+                                )
+
+                                Spacer(modifier = Modifier.height(14.dp))
+
+                                // Status Pill
+                                Surface(
+                                    shape = RoundedCornerShape(20.dp),
+                                    color = Color.Black.copy(alpha = 0.4f),
+                                    border = androidx.compose.foundation.BorderStroke(
+                                        1.dp,
+                                        if (uiState.currentSuggestion?.isStreaming == true) EmeraldGreen.copy(alpha = 0.5f) else Color.White.copy(alpha = 0.12f)
+                                    )
+                                ) {
+                                    Row(
+                                        modifier = Modifier.padding(horizontal = 12.dp, vertical = 6.dp),
+                                        verticalAlignment = Alignment.CenterVertically,
+                                        horizontalArrangement = Arrangement.spacedBy(6.dp)
+                                    ) {
+                                        Box(
+                                            modifier = Modifier
+                                                .size(8.dp)
+                                                .clip(CircleShape)
+                                                .background(
+                                                    if (uiState.currentSuggestion?.isStreaming == true) EmeraldGreen
+                                                    else if (uiState.isConnected) PrimaryCyan
+                                                    else Color(0xFF64748B)
+                                                )
+                                        )
+                                        Text(
+                                            text = if (uiState.currentSuggestion?.isStreaming == true) "STREAMING TO PC HUD"
+                                            else if (uiState.isConnected) "PC COPILOT LINKED"
+                                            else "OFFLINE (CHECK IP)",
+                                            fontSize = 10.5.sp,
+                                            fontWeight = FontWeight.Bold,
+                                            color = if (uiState.currentSuggestion?.isStreaming == true) EmeraldGreen else TextMuted
+                                        )
+                                    }
                                 }
                             }
                         }

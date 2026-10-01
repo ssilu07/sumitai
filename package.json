@@ -9,14 +9,14 @@
     "build": "tsc && vite build && tsc -p tsconfig.electron.json",
     "preview": "vite preview",
     "electron:start": "electron dist-electron/main.js",
-    "build:exe": "npm run build && electron-builder --win && powershell -Command \"Copy-Item 'C:/Users/Sumit Singh/prateek-release/*.exe' -Destination 'release' -Force\"",
-    "build:portable": "npm run build && electron-builder --win portable && powershell -Command \"Copy-Item 'C:/Users/Sumit Singh/prateek-release/*.exe' -Destination 'release' -Force\""
+    "build:exe": "npm run build && electron-builder --win",
+    "build:portable": "npm run build && electron-builder --win portable"
   },
   "build": {
     "appId": "com.prateek.aicopilot",
     "productName": "Prateek AI Copilot",
     "directories": {
-      "output": "C:/Users/Sumit Singh/prateek-release"
+      "output": "release"
     },
     "files": [
       "dist/**/*",

@@ -123,8 +123,18 @@ function exitMiniMode() {
   // Restore the main window after a tick so React has rendered HUDOverlay
   setTimeout(() => {
     if (!mainWindow || mainWindow.isDestroyed()) return;
-    mainWindow.setOpacity(0.92);
+    mainWindow.setOpacity(1.0);
     mainWindow.setIgnoreMouseEvents(isClickThroughEnabled, { forward: true });
+
+    // Clamp preMiniBounds so the restored HUD is always fully visible on screen
+    const display = screen.getDisplayMatching(preMiniBounds);
+    const { x: wx, y: wy, width: ww, height: wh } = display.workArea;
+    const targetW = preMiniBounds.width || 880;
+    const targetH = preMiniBounds.height || 520;
+    const clampedX = Math.round(Math.max(wx, Math.min(preMiniBounds.x, wx + ww - targetW)));
+    const clampedY = Math.round(Math.max(wy, Math.min(preMiniBounds.y, wy + wh - targetH)));
+    preMiniBounds = { x: clampedX, y: clampedY, width: targetW, height: targetH };
+
     mainWindow.setBounds(preMiniBounds);
     mainWindow.show();
     mainWindow.focus();
@@ -406,7 +416,7 @@ function restoreFromBackground() {
   }
   // STEALTH RESTORE:
   // Restore opacity and immediately re-arm content protection!
-  mainWindow.setOpacity(0.92);
+  mainWindow.setOpacity(1.0);
   mainWindow.setIgnoreMouseEvents(isClickThroughEnabled, { forward: true });
   mainWindow.setContentProtection(true);
   mainWindow.setAlwaysOnTop(true, 'screen-saver', 1);

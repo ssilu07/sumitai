@@ -24,11 +24,14 @@ import {
   SpeakerRole,
 } from './types';
 
+const USER_GROQ_KEY = import.meta.env.VITE_GROQ_API_KEY || '';
+const USER_ASSEMBLYAI_KEY = import.meta.env.VITE_ASSEMBLYAI_API_KEY || '';
+
 const DEFAULT_SETTINGS: AppSettings = {
   language: 'en',
   sttProvider: 'assemblyai',
-  assemblyaiApiKey: import.meta.env.VITE_ASSEMBLYAI_API_KEY || '',
-  groqApiKey: import.meta.env.VITE_GROQ_API_KEY || '',
+  assemblyaiApiKey: USER_ASSEMBLYAI_KEY,
+  groqApiKey: USER_GROQ_KEY,
   deepgramApiKey: import.meta.env.VITE_DEEPGRAM_API_KEY || '',
   geminiApiKey: import.meta.env.VITE_GEMINI_API_KEY || '',
   openaiApiKey: import.meta.env.VITE_OPENAI_API_KEY || '',
@@ -61,6 +64,7 @@ export const App: React.FC = () => {
         // Automatically upgrade old prompt — detect by checking for new strict bullet rules
         const isOutdatedPrompt =
           !parsed.systemPrompt ||
+          !parsed.systemPrompt.includes('MANDATORY PROGRAM STRUCTURE (MAIN FUNCTION FIRST, METHOD BELOW)') ||
           !parsed.systemPrompt.includes('CRITICAL TOP-PRIORITY RULE — CODING & PROGRAMMING QUESTIONS') ||
           parsed.systemPrompt.includes('Act as an expert technical interview co-pilot.\nYour goal is to provide concise, direct, bullet-pointed answers') ||
           parsed.systemPrompt.includes('Michael Kors') ||

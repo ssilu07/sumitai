@@ -572,7 +572,7 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
                   </button>
                   <button
                     type="button"
-                    onClick={() => setFormData({ ...formData, aiProvider: 'gemini', modelName: 'gemini-3.5-flash-lite' })}
+                    onClick={() => setFormData({ ...formData, aiProvider: 'gemini', modelName: 'gemini-flash-latest' })}
                     className={`px-3 py-2 rounded border text-left flex flex-col gap-0.5 transition-all ${
                       formData.aiProvider === 'gemini'
                         ? 'bg-blue-950/60 border-blue-500 text-blue-200 ring-1 ring-blue-500'
@@ -613,14 +613,16 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
                   {formData.aiProvider === 'groq' && (
                     <>
                       <option value="qwen/qwen3.8-27b">⚡ qwen/qwen3.8-27b (160ms TTFT - Super Fast & Accurate - Recommended)</option>
+                      <option value="openai/gpt-oss-120b">openai/gpt-oss-120b (Deep Reasoning - High Quality)</option>
                       <option value="openai/gpt-oss-20b">openai/gpt-oss-20b (500ms TTFT)</option>
                     </>
                   )}
                   {formData.aiProvider === 'gemini' && (
                     <>
-                      <option value="gemini-3.5-flash-lite">⚡ gemini-3.5-flash-lite (Fastest Gemini - 1.4s TTFT - Recommended)</option>
+                      <option value="gemini-flash-latest">⚡ gemini-flash-latest (Recommended - Fast & Stable)</option>
+                      <option value="gemini-3.6-flash">gemini-3.6-flash (Latest Model)</option>
+                      <option value="gemini-3.5-flash-lite">gemini-3.5-flash-lite (Fast Flash Lite)</option>
                       <option value="gemini-flash-lite-latest">gemini-flash-lite-latest (Stable Flash Lite)</option>
-                      <option value="gemini-3.5-flash">gemini-3.5-flash (Standard Quality)</option>
                     </>
                   )}
                   {formData.aiProvider === 'openai' && (

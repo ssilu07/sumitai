@@ -82,16 +82,20 @@ STRICT COMPLIANCE RULES:
    - Jump straight to optimal complexity and the working program.
 2. ⏱️ OPTIMAL COMPLEXITY IN BOLD:
    - Start immediately on line 1 with: "**Optimal Time: O(...) | Space: O(...)**".
-3. 💻 COMPLETE, FULLY RUNNABLE KOTLIN PROGRAM:
-   - Output in a markdown \`\`\`kotlin ... \`\`\` block.
-   - Provide clean, production-ready, idiomatic Kotlin (e.g. extension function: \`fun String.isPalindrome(): Boolean\` or optimal class/function).
-   - ALWAYS INCLUDE a working \`fun main()\` that tests 3-4 diverse cases (including edge cases like empty string, case sensitivity, punctuation/special characters) and prints results!
-   - Write clear, concise inline comments explaining tricky lines.
-4. 🎯 ALGORITHM INTUITION & EDGE CASES:
-   - In 2-3 crisp bullet points, explain:
+3. ❌ NO PREDEFINED / INBUILT SHORTCUT FUNCTIONS:
+   - STRICTLY FORBIDDEN to use built-in shortcut functions that solve the algorithm directly (e.g., NEVER use .reversed(), StringBuilder.reverse(), .sort(), .sorted(), Arrays.sort(), .distinct(), .toSet(), .contains(), .replace(), .maxOrNull(), .minOrNull(), etc.).
+   - Implement the core algorithm manually using standard fundamentals: loops (while, for), pointers (left, right), conditionals (if/else), and index manipulation.
+4. 💻 MANDATORY PROGRAM STRUCTURE (MAIN FUNCTION FIRST, THEN METHOD BELOW):
+   - Provide the code in a simple, clean, and straightforward way in a markdown \`\`\`kotlin ... \`\`\` block.
+   - ALWAYS follow this exact order:
+     1. FIRST: Put \`fun main()\` at the VERY TOP of the code block.
+        Inside \`fun main()\`: define test inputs, call the custom method, and print the output.
+     2. SECOND: Put the custom method / function called from \`main\` BELOW \`fun main()\`.
+5. 🎯 ALGORITHM INTUITION & EDGE CASES:
+   - In 2-3 crisp bullet points below the code, explain:
      * Core algorithm logic (e.g. two pointers converging from both ends).
      * Handled edge cases (e.g. empty inputs, case insensitivity, non-alphanumeric filtering).
-5. 🛡️ STRICTLY IDIOMATIC KOTLIN. Do not use Java or Python.`;
+6. 🛡️ STRICTLY IDIOMATIC KOTLIN. Do not use Java or Python.`;
   }
 
   if (language === 'hi') {
@@ -223,12 +227,18 @@ PRIMARY DIRECTIVE:
    - State the detected problem title clearly in bold.
 
 2. IF THIS IS A CODING / PROGRAMMING / ALGORITHM / LEETCODE PROBLEM OR ASKS TO WRITE CODE:
-   ❌ STRICTLY FORBIDDEN: DO NOT just provide theoretical definitions or bullet point summaries! NEVER output a generic textbook definition of the topic.
-   ✅ MANDATORY: YOU MUST PROVIDE THE ACTUAL, WORKING CODE SOLUTION IN KOTLIN!
+   ❌ STRICTLY FORBIDDEN:
+   - DO NOT just provide theoretical definitions or bullet point summaries! NEVER output a generic textbook definition of the topic.
+   - STRICTLY FORBIDDEN TO USE PREDEFINED / INBUILT SHORTCUT FUNCTIONS: NEVER use built-in shortcut functions that bypass writing the algorithm logic (e.g., NEVER use .reversed(), StringBuilder.reverse(), .sort(), .sorted(), Arrays.sort(), .distinct(), .toSet(), .contains(), .replace(), .maxOrNull(), .minOrNull(), etc.). Write pure manual logic from scratch!
+
+   ✅ MANDATORY PROGRAM STRUCTURE (MAIN FUNCTION FIRST, METHOD BELOW):
    - State the optimal Time and Space Complexity in bold: "**Optimal Time: O(...) | Space: O(...)**".
-   - Provide the COMPLETE, PRODUCTION-READY, RUNNABLE Kotlin code in a markdown \`\`\`kotlin ... \`\`\` block.
-   - Include a working \`fun main()\` with 3-4 test cases (including edge cases) showing example input and expected output.
-   - Explain the core algorithm intuition and edge cases in 2-3 crisp bullet points.
+   - You MUST write the code in a SIMPLE, CLEAN, STRAIGHTFORWARD WAY (easy-to-understand manual logic, clear intuitive variables like left/right/temp/count).
+   - In the markdown \`\`\`kotlin ... \`\`\` code block, ALWAYS follow this EXACT order:
+     1. FIRST: Define \`fun main()\` at the VERY TOP of the code block.
+        - Inside \`fun main()\`: declare sample test input(s), call the custom method, and print the output.
+     2. SECOND: Define the custom method / function that was called from \`main\` BELOW \`fun main()\`.
+   - Explain the core algorithm intuition and edge cases in 2-3 crisp bullet points below the code block.
 
 3. IF THIS IS A CONCEPTUAL / THEORETICAL / ARCHITECTURAL QUESTION (No code requested):
    - Provide the complete, structured senior interview answer following the framework (1 bold core sentence, production context, core mechanism, production example, key concepts).`;
@@ -403,11 +413,10 @@ PRIMARY DIRECTIVE:
     };
 
     const fallbackModels = [
-      'gemini-3.6-flash',
       'gemini-flash-latest',
+      'gemini-3.6-flash',
       'gemini-flash-lite-latest',
-      'gemini-2.5-flash',
-      'gemini-3.5-flash',
+      'gemini-3.5-flash-lite',
     ];
     const isGeminiModel = modelName && modelName.startsWith('gemini');
     const GEMINI_MODELS = isGeminiModel
@@ -507,8 +516,8 @@ PRIMARY DIRECTIVE:
     const endpoint = 'https://api.groq.com/openai/v1/chat/completions';
     const defaultGroqModels = [
       'qwen/qwen3.8-27b',
-      'llama-3.3-70b-versatile',
-      'llama-3.1-8b-instant',
+      'openai/gpt-oss-120b',
+      'openai/gpt-oss-20b',
     ];
     const isGroqModel = modelName && (modelName.includes('qwen') || modelName.includes('llama') || modelName.includes('gpt-oss'));
     const modelsToTry = isGroqModel

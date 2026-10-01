@@ -763,6 +763,8 @@ function getMobileHTML(): string {
         <span style="font-size: 11px; color: #475569;">Answer streams on PC HUD & this phone simultaneously.</span>
       </div>
     </div>
+  </div>
+
   <!-- Sticky Bottom Enter/Generate Box -->
   <div class="bottom-bar-container">
     <div class="bottom-generate-bar" id="btnBottomGenerate" onclick="generateAnswer()">
